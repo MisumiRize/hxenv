@@ -1,6 +1,6 @@
 # hxenv - manage Haxe environment
 
-Hxenv is Haxe environment managing tool inspired by hxenv and hxenv.
+Hxenv is Haxe environment managing tool inspired by rbenv and plenv.
 
 ## INSTALLATION
 
