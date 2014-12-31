@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+#
+# Summary: Set or show the local application-specific Haxe version
+#
+# Usage: hxenv local <version>
+#        hxenv local --unset
+#
+# Sets the local application-specific Haxe version by writing the
+# version name to a file named `.haxe-version'.
+#
+# When you run a Haxe command, hxenv will look for a `.haxe-version'
+# file in the current directory and each parent directory. If no such
+# file is found in the tree, hxenv will use the global Haxe version
+# specified with `hxenv global'. A version specified with the
+# `HXENV_VERSION' environment variable takes precedence over local
+# and global versions.
+#
+# For backwards compatibility, hxenv will also read version
+# specifications from `.hxenv-version' files, but a `.haxe-version'
+# file in the same directory takes precedence.
+#
+# <version> should be a string matching a Haxe version known to hxenv.
+# The special version string `system' will use your default system Haxe.
+# Run `hxenv versions' for a list of available Haxe versions.
+
+set -e
+[ -n "$HXENV_DEBUG" ] && set -x
+
+# Provide hxenv completions
+if [ "$1" = "--complete" ]; then
+  echo --unset
+  echo system
+  exec hxenv-versions --bare
+fi
+
+HXENV_VERSION="$1"
+
+if [ "$HXENV_VERSION" = "--unset" ]; then
+  rm -f .haxe-version .hxenv-version
+elif [ -n "$HXENV_VERSION" ]; then
+  previous_file="$(HXENV_VERSION= hxenv-version-origin || true)"
+  hxenv-version-file-write .haxe-version "$HXENV_VERSION"
+  if [ "$previous_file" -ef .hxenv-version ]; then
+    rm -f .hxenv-version
+    { echo "hxenv: removed existing \`.hxenv-version' file and migrated"
+      echo "       local version specification to \`.haxe-version' file"
+    } >&2
+  fi
+else
+  hxenv-version-file-read .haxe-version ||
+  hxenv-version-file-read .hxenv-version ||
+  { echo "hxenv: no local version configured for this directory"
+    exit 1
+  } >&2
+fi

@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Usage: hxenv version-file-write <file> <version>
+
+set -e
+[ -n "$HXENV_DEBUG" ] && set -x
+
+HXENV_VERSION_FILE="$1"
+HXENV_VERSION="$2"
+
+if [ -z "$HXENV_VERSION" ] || [ -z "$HXENV_VERSION_FILE" ]; then
+  hxenv-help --usage version-file-write >&2
+  exit 1
+fi
+
+# Make sure the specified version is installed.
+hxenv-prefix "$HXENV_VERSION" >/dev/null
+
+# Write the version out to disk.
+echo "$HXENV_VERSION" > "$HXENV_VERSION_FILE"

@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Summary: Show the current Haxe version
+set -e
+[ -n "$HXENV_DEBUG" ] && set -x
+
+if [ -z "$HXENV_VERSION" ]; then
+  HXENV_VERSION_FILE="$(hxenv-version-file)"
+  HXENV_VERSION="$(hxenv-version-file-read "$HXENV_VERSION_FILE" || true)"
+fi
+
+if [ -z "$HXENV_VERSION" ] || [ "$HXENV_VERSION" = "system" ]; then
+  echo "system"
+  exit
+fi
+
+version_exists() {
+  local version="$1"
+  [ -d "${HXENV_ROOT}/versions/${version}" ]
+}
+
+if version_exists "$HXENV_VERSION"; then
+  echo "$HXENV_VERSION"
+elif version_exists "${HXENV_VERSION#haxe-}"; then
+  { echo "warning: ignoring extraneous \`haxe-' prefix in version \`${HXENV_VERSION}'"
+    echo "         (set by $(hxenv-version-origin))"
+  } >&2
+  echo "${HXENV_VERSION#haxe-}"
+else
+  echo "hxenv: version \`$HXENV_VERSION' is not installed" >&2
+  exit 1
+fi

@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+#
+# Summary: Set or show the global Haxe version
+#
+# Usage: hxenv global <version>
+#
+# Sets the global Haxe version. You can override the global version at
+# any time by setting a directory-specific version with `hxenv local'
+# or by setting the `HXENV_VERSION' environment variable.
+#
+# <version> should be a string matching a Haxe version known to hxenv.
+# The special version string `system' will use your default system Haxe.
+# Run `hxenv versions' for a list of available Haxe versions.
+
+set -e
+[ -n "$HXENV_DEBUG" ] && set -x
+
+# Provide hxenv completions
+if [ "$1" = "--complete" ]; then
+  echo system
+  exec hxenv-versions --bare
+fi
+
+HXENV_VERSION="$1"
+HXENV_VERSION_FILE="${HXENV_ROOT}/version"
+
+if [ -n "$HXENV_VERSION" ]; then
+  hxenv-version-file-write "$HXENV_VERSION_FILE" "$HXENV_VERSION"
+else
+  hxenv-version-file-read "$HXENV_VERSION_FILE" ||
+  hxenv-version-file-read "${HXENV_ROOT}/global" ||
+  hxenv-version-file-read "${HXENV_ROOT}/default" ||
+  echo system
+fi

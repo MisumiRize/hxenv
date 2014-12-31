@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Summary: List existing hxenv shims
+# Usage: hxenv shims [--short]
+
+set -e
+[ -n "$HXENV_DEBUG" ] && set -x
+
+# Provide hxenv completions
+if [ "$1" = "--complete" ]; then
+  echo --short
+  exit
+fi
+
+shopt -s nullglob
+
+for command in "${HXENV_ROOT}/shims/"*; do
+  if [ "$1" = "--short" ]; then
+    echo "${command##*/}"
+  else
+    echo "$command"
+  fi
+done | sort

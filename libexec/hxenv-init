@@ -1,0 +1,145 @@
+#!/usr/bin/env bash
+# Summary: Configure the shell environment for hxenv
+# Usage: eval "$(hxenv init - [--no-rehash] [<shell>])"
+
+set -e
+[ -n "$HXENV_DEBUG" ] && set -x
+
+print=""
+no_rehash=1
+for args in "$@"
+do
+  if [ "$args" = "-" ]; then
+    print=1
+    shift
+  fi
+
+  if [ "$args" = "--no-rehash" ]; then
+    no_rehash=1
+    shift
+  fi
+done
+
+shell="$1"
+if [ -z "$shell" ]; then
+  shell="$(ps c -p "$PPID" -o 'ucomm=' 2>/dev/null || true)"
+  shell="${shell##-}"
+  shell="${shell%% *}"
+  shell="$(basename "${shell:-$SHELL}")"
+fi
+
+root="${0%/*}/.."
+
+if [ -z "$print" ]; then
+  case "$shell" in
+  bash )
+    profile='~/.bash_profile'
+    ;;
+  zsh )
+    profile='~/.zshrc'
+    ;;
+  ksh )
+    profile='~/.profile'
+    ;;
+  fish )
+    profile='~/.config/fish/config.fish'
+    ;;
+  * )
+    profile='your profile'
+    ;;
+  esac
+
+  { echo "# Load hxenv automatically by adding"
+    echo "# the following to ${profile}:"
+    echo
+    case "$shell" in
+    fish )
+      echo 'status --is-interactive; and . (hxenv init -|psub)'
+      ;;
+    * )
+      echo 'eval "$(hxenv init -)"'
+      ;;
+    esac
+    echo
+  } >&2
+
+  exit 1
+fi
+
+mkdir -p "${HXENV_ROOT}/"{shims,versions}
+
+if [ -f "${HOME}/.haxe" ] && [ ! -e "${HXENV_ROOT}/.haxe" ]; then
+  cp "${HOME}/.haxe" "${HXENV_ROOT}/.haxe"
+fi
+
+case "$shell" in
+fish )
+  echo "setenv PATH '${HXENV_ROOT}/shims' \$PATH"
+  echo "setenv HXENV_SHELL $shell"
+;;
+* )
+  echo 'export PATH="'${HXENV_ROOT}'/shims:${PATH}"'
+  echo "export HXENV_SHELL=$shell"
+;;
+esac
+
+completion="${root}/completions/hxenv.${shell}"
+if [ -r "$completion" ]; then
+  case "$shell" in
+  fish ) echo ". '$completion'" ;;
+  *    ) echo "source '$completion'" ;;
+  esac
+fi
+
+if [ -z "$no_rehash" ]; then
+  echo 'hxenv rehash 2>/dev/null'
+fi
+
+commands=(`hxenv-commands --sh`)
+case "$shell" in
+fish )
+  cat <<EOS
+function hxenv
+  set command \$argv[1]
+  set -e argv[1]
+
+  switch "\$command"
+  case ${commands[*]}
+    eval (hxenv "sh-\$command" \$argv)
+  case '*'
+    command hxenv "\$command" \$argv
+  end
+end
+EOS
+  ;;
+ksh )
+  cat <<EOS
+function hxenv {
+  typeset command
+EOS
+  ;;
+* )
+  cat <<EOS
+hxenv() {
+  local command
+EOS
+  ;;
+esac
+
+if [ "$shell" != "fish" ]; then
+IFS="|"
+cat <<EOS
+  command="\$1"
+  if [ "\$#" -gt 0 ]; then
+    shift
+  fi
+
+  case "\$command" in
+  ${commands[*]})
+    eval "\`hxenv "sh-\$command" "\$@"\`";;
+  *)
+    command hxenv "\$command" "\$@";;
+  esac
+}
+EOS
+fi

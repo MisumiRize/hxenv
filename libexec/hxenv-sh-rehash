@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -e
+[ -n "$HXENV_DEBUG" ] && set -x
+
+# Provide hxenv completions
+if [ "$1" = "--complete" ]; then
+  exec hxenv-rehash --complete
+fi
+
+shell="$(basename "${HXENV_SHELL:-$SHELL}")"
+
+# When hxenv shell integration is enabled, delegate to hxenv-rehash,
+# then tell the shell to empty its command lookup cache.
+hxenv-rehash
+
+case "$shell" in
+fish )
+  # no rehash support
+  ;;
+* )
+  echo "hash -r 2>/dev/null || true"
+  ;;
+esac

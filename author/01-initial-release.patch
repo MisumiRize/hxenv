@@ -1,0 +1,26 @@
+diff -r -u libexec/hxenv-exec libexec-patched/hxenv-exec
+--- libexec/hxenv-exec	2014-12-20 13:32:49.000000000 +0900
++++ libexec-patched/hxenv-exec	2014-12-20 13:29:12.000000000 +0900
+@@ -43,5 +43,8 @@
+ shift 1
+ if [ "$HXENV_VERSION" != "system" ]; then
+   export PATH="${HXENV_BIN_PATH}:${PATH}"
++  echo "${HXENV_ROOT}/versions/${HXNEV_VERSION}/lib/haxelib" > "${HOME}/.haxe"
++else
++  cp "${HXENV_ROOT}/.haxe" "${HOME}/.haxe"
+ fi
+ exec -a "$HXENV_COMMAND" "$HXENV_COMMAND_PATH" "$@"
+diff -r -u libexec/hxenv-init libexec-patched/hxenv-init
+--- libexec/hxenv-init	2014-12-20 13:32:49.000000000 +0900
++++ libexec-patched/hxenv-init	2014-12-20 13:32:06.000000000 +0900
+@@ -68,6 +68,10 @@
+ 
+ mkdir -p "${HXENV_ROOT}/"{shims,versions}
+ 
++if [ -f "${HOME}/.haxe" ] && [ ! -e "${HXENV_ROOT}/.haxe" ]; then
++  cp "${HOME}/.haxe" "${HXENV_ROOT}/.haxe"
++fi
++
+ case "$shell" in
+ fish )
+   echo "setenv PATH '${HXENV_ROOT}/shims' \$PATH"

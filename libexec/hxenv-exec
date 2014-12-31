@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+#
+# Summary: Run an executable with the selected Haxe version
+#
+# Usage: hxenv exec <command> [arg1 arg2...]
+#
+# Runs an executable by first preparing PATH so that the selected Haxe
+# version's `bin' directory is at the front.
+#
+# For example, if the currently selected Haxe version is 3.1.3:
+#   hxenv exec charlotte install
+#
+# is equivalent to:
+#   PATH="$HXENV_ROOT/versions/3.1.3/bin:$PATH" charlotte install
+
+set -e
+[ -n "$HXENV_DEBUG" ] && set -x
+
+# Provide hxenv completions
+if [ "$1" = "--complete" ]; then
+  exec hxenv-shims --short
+fi
+
+HXENV_VERSION="$(hxenv-version-name)"
+HXENV_COMMAND="$1"
+
+if [ -z "$HXENV_COMMAND" ]; then
+  hxenv-help --usage exec >&2
+  exit 1
+fi
+
+export HXENV_VERSION
+HXENV_COMMAND_PATH="$(hxenv-which "$HXENV_COMMAND")"
+HXENV_BIN_PATH="${HXENV_COMMAND_PATH%/*}"
+
+OLDIFS="$IFS"
+IFS=$'\n' scripts=(`hxenv-hooks exec`)
+IFS="$OLDIFS"
+for script in "${scripts[@]}"; do
+  source "$script"
+done
+
+shift 1
+if [ "$HXENV_VERSION" != "system" ]; then
+  export PATH="${HXENV_BIN_PATH}:${PATH}"
+  echo "${HXENV_ROOT}/versions/${HXNEV_VERSION}/lib/haxelib" > "${HOME}/.haxe"
+else
+  cp "${HXENV_ROOT}/.haxe" "${HOME}/.haxe"
+fi
+exec -a "$HXENV_COMMAND" "$HXENV_COMMAND_PATH" "$@"

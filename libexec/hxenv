@@ -1,0 +1,110 @@
+#!/usr/bin/env bash
+set -e
+export -n CDPATH
+
+if [ "$1" = "--debug" ]; then
+  export HXENV_DEBUG=1
+  shift
+fi
+
+if [ -n "$HXENV_DEBUG" ]; then
+  export PS4='+ [${BASH_SOURCE##*/}:${LINENO}] '
+  set -x
+fi
+
+if enable -f "${0%/*}"/../libexec/hxenv-realpath.dylib realpath 2>/dev/null; then
+  abs_dirname() {
+    local path="$(realpath "$1")"
+    echo "${path%/*}"
+  }
+else
+  if [ -n "$HXENV_NATIVE_EXT" ]; then
+    echo "hxenv: failed to load \`realpath' builtin" >&2
+    exit 1
+  fi
+READLINK=$(type -p greadlink readlink | head -1)
+if [ -z "$READLINK" ]; then
+  echo "hxenv: cannot find readlink - are you missing GNU coreutils?" >&2
+  exit 1
+fi
+
+resolve_link() {
+  $READLINK "$1"
+}
+
+abs_dirname() {
+  local cwd="$(pwd)"
+  local path="$1"
+
+  while [ -n "$path" ]; do
+    cd "${path%/*}"
+    local name="${path##*/}"
+    path="$(resolve_link "$name" || true)"
+  done
+
+  pwd
+  cd "$cwd"
+}
+fi
+
+if [ -z "${HXENV_ROOT}" ]; then
+  HXENV_ROOT="${HOME}/.hxenv"
+else
+  HXENV_ROOT="${HXENV_ROOT%/}"
+fi
+export HXENV_ROOT
+
+if [ -z "${HXENV_DIR}" ]; then
+  HXENV_DIR="$(pwd)"
+else
+  cd "$HXENV_DIR" 2>/dev/null || {
+    echo "hxenv: cannot change working directory to \`$HXENV_DIR'"
+    exit 1
+  } >&2
+  HXENV_DIR="$(pwd)"
+  cd "$OLDPWD"
+fi
+export HXENV_DIR
+
+
+shopt -s nullglob
+
+bin_path="$(abs_dirname "$0")"
+for plugin_bin in "${HXENV_ROOT}/plugins/"*/bin; do
+  PATH="${plugin_bin}:${PATH}"
+done
+export PATH="${bin_path}:${PATH}"
+
+HXENV_HOOK_PATH="${HXENV_HOOK_PATH}:${HXENV_ROOT}/hxenv.d"
+if [ "${bin_path%/*}" != "$HXENV_ROOT" ]; then
+  # Add hxenv's own `hxenv.d` unless hxenv was cloned to HXENV_ROOT
+  HXENV_HOOK_PATH="${HXENV_HOOK_PATH}:${bin_path%/*}/hxenv.d"
+fi
+HXENV_HOOK_PATH="${HXENV_HOOK_PATH}:/usr/local/etc/hxenv.d:/etc/hxenv.d:/usr/lib/hxenv/hooks"
+for plugin_hook in "${HXENV_ROOT}/plugins/"*/etc/hxenv.d; do
+  HXENV_HOOK_PATH="${HXENV_HOOK_PATH}:${plugin_hook}"
+done
+export HXENV_HOOK_PATH
+
+shopt -u nullglob
+
+
+command="$1"
+case "$command" in
+"" | "-h" | "--help" )
+  echo -e "$(hxenv---version)\n$(hxenv-help)" >&2
+  ;;
+"-v" )
+  exec hxenv---version
+  ;;
+* )
+  command_path="$(command -v "hxenv-$command" || true)"
+  if [ -z "$command_path" ]; then
+    echo "hxenv: no such command \`$command'" >&2
+    exit 1
+  fi
+
+  shift 1
+  exec "$command_path" "$@"
+  ;;
+esac

@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Summary: Explain how the current Haxe version is set
+set -e
+[ -n "$HXENV_DEBUG" ] && set -x
+
+if [ -n "$HXENV_VERSION" ]; then
+  echo "HXENV_VERSION environment variable"
+else
+  hxenv-version-file
+fi

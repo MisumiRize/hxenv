@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+#
+# Summary: Display the full path to an executable
+#
+# Usage: hxenv which <command>
+#
+# Displays the full path to the executable that hxenv will invoke when
+# you run the given command.
+
+set -e
+[ -n "$HXENV_DEBUG" ] && set -x
+
+# Provide hxenv completions
+if [ "$1" = "--complete" ]; then
+  exec hxenv-shims --short
+fi
+
+remove_from_path() {
+  local path_to_remove="$1"
+  local path_before
+  local result=":$PATH:"
+  while [ "$path_before" != "$result" ]; do
+    path_before="$result"
+    result="${result//:$path_to_remove:/:}"
+  done
+  echo "${result%:}"
+}
+
+HXENV_COMMAND="$1"
+
+if [ -z "$HXENV_COMMAND" ]; then
+  hxenv-help --usage which >&2
+  exit 1
+fi
+
+HXENV_VERSION="${HXENV_VERSION:-$(hxenv-version-name)}"
+
+if [ "$HXENV_VERSION" = "system" ]; then
+  PATH="$(remove_from_path "${HXENV_ROOT}/shims")"
+  HXENV_COMMAND_PATH="$(command -v "$HXENV_COMMAND" || true)"
+else
+  HXENV_COMMAND_PATH="${HXENV_ROOT}/versions/${HXENV_VERSION}/bin/${HXENV_COMMAND}"
+fi
+
+OLDIFS="$IFS"
+IFS=$'\n' scripts=(`hxenv-hooks which`)
+IFS="$OLDIFS"
+for script in "${scripts[@]}"; do
+  source "$script"
+done
+
+if [ -x "$HXENV_COMMAND_PATH" ]; then
+  echo "$HXENV_COMMAND_PATH"
+elif ! [ -d "${HXENV_ROOT}/versions/${HXENV_VERSION}" ]; then
+  echo "hxenv: version \`$HXENV_VERSION' is not installed" >&2
+  exit 1
+else
+  echo "hxenv: $HXENV_COMMAND: command not found" >&2
+
+  versions="$(hxenv-whence "$HXENV_COMMAND" || true)"
+  if [ -n "$versions" ]; then
+    { echo
+      echo "The \`$1' command exists in these Haxe versions:"
+      echo "$versions" | sed 's/^/  /g'
+      echo
+    } >&2
+  fi
+
+  exit 127
+fi
