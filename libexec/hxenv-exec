@@ -43,8 +43,10 @@ done
 shift 1
 if [ "$HXENV_VERSION" != "system" ]; then
   export PATH="${HXENV_BIN_PATH}:${PATH}"
-  echo "${HXENV_ROOT}/versions/${HXNEV_VERSION}/lib/haxelib" > "${HOME}/.haxe"
-else
+  if [ "$NO_HAXELIB_OVERRIDE" != "1" ]; then
+    echo "${HXENV_ROOT}/versions/${HXNEV_VERSION}/lib/haxelib" > "${HOME}/.haxe"
+  fi
+elif [ "$NO_HAXELIB_OVERRIDE" != "1" ]; then
   cp "${HXENV_ROOT}/.haxe" "${HOME}/.haxe"
 fi
 exec -a "$HXENV_COMMAND" "$HXENV_COMMAND_PATH" "$@"

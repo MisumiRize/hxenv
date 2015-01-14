@@ -1,18 +1,20 @@
 diff -r -u libexec/hxenv-exec libexec-patched/hxenv-exec
---- libexec/hxenv-exec	2014-12-20 13:32:49.000000000 +0900
-+++ libexec-patched/hxenv-exec	2014-12-20 13:29:12.000000000 +0900
-@@ -43,5 +43,8 @@
+--- libexec/hxenv-exec	2015-01-15 00:12:02.000000000 +0900
++++ libexec-patched/hxenv-exec	2015-01-15 00:08:53.000000000 +0900
+@@ -43,5 +43,10 @@
  shift 1
  if [ "$HXENV_VERSION" != "system" ]; then
    export PATH="${HXENV_BIN_PATH}:${PATH}"
-+  echo "${HXENV_ROOT}/versions/${HXNEV_VERSION}/lib/haxelib" > "${HOME}/.haxe"
-+else
++  if [ "$NO_HAXELIB_OVERRIDE" != "1" ]; then
++    echo "${HXENV_ROOT}/versions/${HXNEV_VERSION}/lib/haxelib" > "${HOME}/.haxe"
++  fi
++elif [ "$NO_HAXELIB_OVERRIDE" != "1" ]; then
 +  cp "${HXENV_ROOT}/.haxe" "${HOME}/.haxe"
  fi
  exec -a "$HXENV_COMMAND" "$HXENV_COMMAND_PATH" "$@"
 diff -r -u libexec/hxenv-init libexec-patched/hxenv-init
---- libexec/hxenv-init	2014-12-20 13:32:49.000000000 +0900
-+++ libexec-patched/hxenv-init	2014-12-20 13:32:06.000000000 +0900
+--- libexec/hxenv-init	2015-01-15 00:12:03.000000000 +0900
++++ libexec-patched/hxenv-init	2015-01-15 00:04:50.000000000 +0900
 @@ -68,6 +68,10 @@
  
  mkdir -p "${HXENV_ROOT}/"{shims,versions}
@@ -24,3 +26,15 @@ diff -r -u libexec/hxenv-init libexec-patched/hxenv-init
  case "$shell" in
  fish )
    echo "setenv PATH '${HXENV_ROOT}/shims' \$PATH"
+diff -r -u libexec/hxenv-rehash libexec-patched/hxenv-rehash
+--- libexec/hxenv-rehash	2015-01-15 00:12:02.000000000 +0900
++++ libexec-patched/hxenv-rehash	2015-01-15 00:10:58.000000000 +0900
+@@ -82,7 +82,7 @@
+ # List basenames of executables for every Haxe version
+ list_executable_names() {
+   local file
+-  for file in "$HXENV_ROOT"/versions/*/bin/*; do
++  for file in "$HXENV_ROOT"/versions/*/{haxe,haxelib}; do
+     echo "${file##*/}"
+   done
+ }
