@@ -1,20 +1,20 @@
 diff -r -u libexec/hxenv-exec libexec-patched/hxenv-exec
---- libexec/hxenv-exec	2015-01-15 00:12:02.000000000 +0900
-+++ libexec-patched/hxenv-exec	2015-01-15 00:08:53.000000000 +0900
+--- libexec/hxenv-exec	2015-01-17 23:06:19.000000000 +0900
++++ libexec-patched/hxenv-exec	2015-01-17 23:00:21.000000000 +0900
 @@ -43,5 +43,10 @@
  shift 1
  if [ "$HXENV_VERSION" != "system" ]; then
    export PATH="${HXENV_BIN_PATH}:${PATH}"
 +  if [ "$NO_HAXELIB_OVERRIDE" != "1" ]; then
-+    echo "${HXENV_ROOT}/versions/${HXNEV_VERSION}/lib/haxelib" > "${HOME}/.haxe"
++    echo "${HXENV_ROOT}/versions/${HXENV_VERSION}/lib/haxelib" > "${HOME}/.haxelib"
 +  fi
 +elif [ "$NO_HAXELIB_OVERRIDE" != "1" ]; then
-+  cp "${HXENV_ROOT}/.haxe" "${HOME}/.haxe"
++  cp "${HXENV_ROOT}/.haxelib" "${HOME}/.haxelib"
  fi
  exec -a "$HXENV_COMMAND" "$HXENV_COMMAND_PATH" "$@"
 diff -r -u libexec/hxenv-init libexec-patched/hxenv-init
---- libexec/hxenv-init	2015-01-15 00:12:03.000000000 +0900
-+++ libexec-patched/hxenv-init	2015-01-15 00:04:50.000000000 +0900
+--- libexec/hxenv-init	2015-01-17 23:06:19.000000000 +0900
++++ libexec-patched/hxenv-init	2015-01-15 00:15:29.000000000 +0900
 @@ -68,6 +68,10 @@
  
  mkdir -p "${HXENV_ROOT}/"{shims,versions}
@@ -27,8 +27,8 @@ diff -r -u libexec/hxenv-init libexec-patched/hxenv-init
  fish )
    echo "setenv PATH '${HXENV_ROOT}/shims' \$PATH"
 diff -r -u libexec/hxenv-rehash libexec-patched/hxenv-rehash
---- libexec/hxenv-rehash	2015-01-15 00:12:02.000000000 +0900
-+++ libexec-patched/hxenv-rehash	2015-01-15 00:10:58.000000000 +0900
+--- libexec/hxenv-rehash	2015-01-17 23:06:19.000000000 +0900
++++ libexec-patched/hxenv-rehash	2015-01-15 00:15:29.000000000 +0900
 @@ -82,7 +82,7 @@
  # List basenames of executables for every Haxe version
  list_executable_names() {
@@ -38,3 +38,15 @@ diff -r -u libexec/hxenv-rehash libexec-patched/hxenv-rehash
      echo "${file##*/}"
    done
  }
+diff -r -u libexec/hxenv-which libexec-patched/hxenv-which
+--- libexec/hxenv-which	2015-01-17 23:06:19.000000000 +0900
++++ libexec-patched/hxenv-which	2015-01-17 23:05:18.000000000 +0900
+@@ -39,7 +39,7 @@
+   PATH="$(remove_from_path "${HXENV_ROOT}/shims")"
+   HXENV_COMMAND_PATH="$(command -v "$HXENV_COMMAND" || true)"
+ else
+-  HXENV_COMMAND_PATH="${HXENV_ROOT}/versions/${HXENV_VERSION}/bin/${HXENV_COMMAND}"
++  HXENV_COMMAND_PATH="${HXENV_ROOT}/versions/${HXENV_VERSION}/${HXENV_COMMAND}"
+ fi
+ 
+ OLDIFS="$IFS"

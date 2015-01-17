@@ -39,7 +39,7 @@ if [ "$HXENV_VERSION" = "system" ]; then
   PATH="$(remove_from_path "${HXENV_ROOT}/shims")"
   HXENV_COMMAND_PATH="$(command -v "$HXENV_COMMAND" || true)"
 else
-  HXENV_COMMAND_PATH="${HXENV_ROOT}/versions/${HXENV_VERSION}/bin/${HXENV_COMMAND}"
+  HXENV_COMMAND_PATH="${HXENV_ROOT}/versions/${HXENV_VERSION}/${HXENV_COMMAND}"
 fi
 
 OLDIFS="$IFS"
